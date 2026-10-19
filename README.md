@@ -1,8 +1,10 @@
 <div align="center">
 
-# 💬 ChatWave
+# WhatsApp Web Clone – Angular 20 + Spring Boot 3 | ChatWave
 
-### WhatsApp Web–Inspired Full-Stack Chat Application
+A full-stack, real-time chat application built with Angular 20,
+Java 21, Spring Boot, WebSocket, STOMP, JWT Authentication,
+TypeScript and MySQL.
 
 **Angular 20 · TypeScript · Spring Boot 3.5 · Java 21 · JWT · WebSocket · H2 / MySQL**
 
