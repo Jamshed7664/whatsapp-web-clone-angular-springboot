@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.angular/
+target/
+*.log
+.env
+.env.*
+!.env.example
+backend/data/
+.idea/
+.vscode/

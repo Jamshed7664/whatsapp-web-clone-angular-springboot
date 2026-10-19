@@ -1,0 +1,17 @@
+server:
+  port: ${PORT:8080}
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:h2:file:./data/chatwave;DB_CLOSE_ON_EXIT=FALSE}
+    username: root
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+app:
+  jwt-secret: ${JWT_SECRET:dev-only-change-this-long-random-64-character-jwt-secret-before-deploying-123456}
+  cors-origin: ${CORS_ORIGIN:http://localhost:4200}

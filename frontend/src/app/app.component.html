@@ -1,0 +1,247 @@
+<div class="app-shell" [class.light]="!dark()">
+    @if (!me()) {
+    <main class="auth-screen">
+        <div class="auth-card">
+            <div class="brand-big"><span class="material-symbols-rounded">chat</span></div>
+            <h1>ChatWave</h1>
+            <p class="muted">Simple. Secure. Connected.</p>
+            <h2>{{loginMode?'Welcome back':'Create an account'}}</h2>
+            <form (ngSubmit)="auth()">
+                @if(!loginMode){<label
+                    >Your name<input
+                        name="name"
+                        [(ngModel)]="name"
+                        required
+                        minlength="2"
+                        placeholder="Enter your name" /></label
+                >}<label
+                    >Email address<input
+                        type="email"
+                        name="email"
+                        [(ngModel)]="email"
+                        required
+                        placeholder="you@example.com" /></label
+                ><label
+                    >Password<input
+                        type="password"
+                        name="password"
+                        [(ngModel)]="password"
+                        required
+                        minlength="6"
+                        placeholder="At least 6 characters" /></label
+                >@if(error){
+                <div class="error">{{error}}</div>
+                }<button class="primary" [disabled]="busy">
+                    {{busy?'Please wait...':loginMode?'Sign in':'Create account'}}
+                </button>
+            </form>
+            <p class="switch">
+                {{loginMode?'New to ChatWave?':'Already registered?'}}
+                <a (click)="loginMode=!loginMode;error=''">{{loginMode?'Create an account':'Sign in'}}</a>
+            </p>
+            <small>Independent messenger demo · Not affiliated with WhatsApp</small>
+        </div>
+    </main>
+    } @else {
+    <div class="workspace">
+        <nav class="rail">
+            <div class="rail-top">
+                <button class="rail-button active" title="Chats" (click)="panel.set('none');sidebarOpen.set(true)">
+                    <span class="material-symbols-rounded">chat_bubble</span></button
+                ><button class="rail-button" title="New chat" (click)="newChat()">
+                    <span class="material-symbols-rounded">group_add</span></button
+                ><button class="rail-button" title="Theme" (click)="toggleTheme()">
+                    <span class="material-symbols-rounded">{{dark()?'light_mode':'dark_mode'}}</span>
+                </button>
+            </div>
+            <div class="rail-bottom">
+                <button class="rail-button" title="Profile" (click)="editProfile()">
+                    <span class="material-symbols-rounded">settings</span></button
+                ><button class="avatar avatar-small mine" (click)="editProfile()" [title]="me()!.name">
+                    {{initial(me()!.name)}}
+                </button>
+            </div>
+        </nav>
+        <aside class="sidebar" [class.mobile-hidden]="!sidebarOpen() && !!activeId()">
+            <div class="side-heading">
+                <h1>Chats</h1>
+                <div class="side-actions">
+                    <button class="icon-btn" title="New chat" (click)="newChat()">
+                        <span class="material-symbols-rounded">edit_square</span></button
+                    ><button class="icon-btn" title="Menu" (click)="menuOpen.set(!menuOpen())">
+                        <span class="material-symbols-rounded">more_vert</span></button
+                    >@if(menuOpen()){
+                    <div class="menu">
+                        <button (click)="editProfile();menuOpen.set(false)">Profile</button
+                        ><button (click)="toggleTheme();menuOpen.set(false)">Toggle theme</button
+                        ><button (click)="logout()">Log out</button>
+                    </div>
+                    }
+                </div>
+            </div>
+            <div class="search">
+                <span class="material-symbols-rounded">search</span
+                ><input
+                    [ngModel]="search()"
+                    (ngModelChange)="search.set($event)"
+                    placeholder="Ask ChatWave or Search"
+                    aria-label="Search chats"
+                />
+            </div>
+            <div class="filters">
+                <button class="selected">All</button><button (click)="newChat()">New chats</button>
+            </div>
+            <div class="chat-list">
+                @for(c of filtered();track c.id){<button
+                    class="chat-row"
+                    [class.chosen]="activeId()===c.id"
+                    (click)="openChat(c)"
+                >
+                    <div class="avatar" [style.background]="color(c)">{{initial(chatName(c))}}</div>
+                    <div class="chat-summary">
+                        <div class="chat-first">
+                            <strong>{{chatName(c)}}</strong><time>{{time(c.lastMessage?.createdAt||c.updatedAt)}}</time>
+                        </div>
+                        <div class="chat-second">
+                            <span>{{preview(c)}}</span>@if(c.unreadCount>0){<b class="unread">{{c.unreadCount}}</b>}
+                        </div>
+                    </div></button
+                >}@empty {
+                <p class="no-chats">No conversations yet.<br /><a (click)="newChat()">Start a new chat</a></p>
+                }
+            </div>
+            <div class="side-foot">
+                <span class="material-symbols-rounded">lock</span> Your messages stay in your own ChatWave account
+            </div>
+        </aside>
+        <section class="conversation">
+            @if(active();as chat){
+            <header class="conv-header">
+                <button class="icon-btn back" (click)="sidebarOpen.set(true);activeId.set(null)">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                </button>
+                <div class="avatar" [style.background]="color(chat)">{{initial(chatName(chat))}}</div>
+                <div class="contact-label" (click)="panel.set('info')">
+                    <strong>{{chatName(chat)}}</strong
+                    ><span>{{chat.groupChat?chat.members.length+' participants':'Tap here for contact info'}}</span>
+                </div>
+                <div class="head-actions">
+                    <button class="icon-btn" title="Contact details" (click)="panel.set('info')">
+                        <span class="material-symbols-rounded">more_vert</span>
+                    </button>
+                </div>
+            </header>
+            <div class="message-area">
+                <div class="chat-date">Messages are stored on your ChatWave server</div>
+                @for(m of messages();track m.id){
+                <div class="message-line" [class.own]="isMine(m)">
+                    <div class="bubble">
+                        <p>{{m.body}}</p>
+                        <div class="msg-meta">
+                            {{msgTime(m.createdAt)}} @if(isMine(m)){<span class="material-symbols-rounded tick"
+                                >done_all</span
+                            >}
+                        </div>
+                    </div>
+                </div>
+                }
+                <div id="message-bottom"></div>
+            </div>
+            <form class="composer" (ngSubmit)="send()">
+                <button type="button" class="icon-btn" title="New conversation" (click)="newChat()">
+                    <span class="material-symbols-rounded">add</span></button
+                ><input
+                    name="message"
+                    autocomplete="off"
+                    [(ngModel)]="text"
+                    maxlength="5000"
+                    placeholder="Type a message"
+                    aria-label="Message text"
+                /><button class="send-btn" type="submit" [disabled]="!text.trim()">
+                    <span class="material-symbols-rounded">send</span>
+                </button>
+            </form>
+            } @else {
+            <div class="welcome">
+                <div class="welcome-art"><span class="material-symbols-rounded">forum</span></div>
+                <h1>ChatWave for Web</h1>
+                <p>Send and receive messages in real time.<br />Select a conversation to get started.</p>
+                <button class="start-btn" (click)="newChat()">
+                    Start a conversation <span class="material-symbols-rounded">arrow_forward</span>
+                </button>
+                <div class="welcome-footer">
+                    <span class="material-symbols-rounded">lock</span> Built with Angular 20 &amp; Spring Boot
+                </div>
+            </div>
+            }
+        </section>
+        @if(panel()!=='none'){
+        <div class="panel">
+            <header class="panel-header">
+                <button class="icon-btn" (click)="panel.set('none')">
+                    <span class="material-symbols-rounded">arrow_back</span></button
+                ><strong>{{panel()==='new'?'New chat':panel()==='profile'?'Profile':'Contact info'}}</strong>
+            </header>
+            @if(panel()==='new'){
+            <div class="panel-body">
+                <div class="search">
+                    <span class="material-symbols-rounded">search</span
+                    ><input
+                        [(ngModel)]="peopleQuery"
+                        (ngModelChange)="loadPeople()"
+                        placeholder="Search registered users"
+                    />
+                </div>
+                <button class="list-action" (click)="groupMode=!groupMode">
+                    <span class="round-icon"><span class="material-symbols-rounded">group</span></span
+                    >{{groupMode?'Choose group members':'New group'}}</button
+                >@if(groupMode){<input class="field" [(ngModel)]="groupName" placeholder="Group name" />}
+                <div class="section-caption">CONTACTS</div>
+                @for(u of people();track u.id){<button
+                    class="person"
+                    (click)="groupMode?togglePerson(u.id):createWith(u)"
+                >
+                    <div class="avatar" [style.background]="u.avatarColor">{{initial(u.name)}}</div>
+                    <div><strong>{{u.name}}</strong><small>{{u.about||u.email}}</small></div>
+                    @if(groupMode){<span class="material-symbols-rounded pick"
+                        >{{selectedUsers.includes(u.id)?'check_circle':'radio_button_unchecked'}}</span
+                    >}</button
+                >}@empty {
+                <p class="muted inset">No other users yet. Register another account in a different browser.</p>
+                }@if(groupMode){<button
+                    class="primary group-create"
+                    [disabled]="selectedUsers.length<2||!groupName.trim()"
+                    (click)="createGroup()"
+                >
+                    Create group ({{selectedUsers.length}})</button
+                >}
+            </div>
+            } @if(panel()==='profile'){
+            <div class="profile-page">
+                <div class="big-avatar">{{initial(me()!.name)}}</div>
+                <label>Your name<input [(ngModel)]="profileName" maxlength="100" /></label
+                ><label>About<input [(ngModel)]="profileAbout" maxlength="255" /></label
+                ><label>Email<input disabled [value]="me()!.email" /></label
+                ><button class="primary" (click)="saveProfile()">Save changes</button
+                ><button class="signout" (click)="logout()">Sign out</button>
+            </div>
+            } @if(panel()==='info'){
+            <div class="profile-page">
+                @if(active();as chat){
+                <div class="big-avatar">{{initial(chatName(chat))}}</div>
+                <h2>{{chatName(chat)}}</h2>
+                <p class="muted">{{chat.groupChat?'Group conversation':'Direct conversation'}}</p>
+                <h3>Participants ({{chat.members.length}})</h3>
+                @for(u of chat.members;track u.id){
+                <div class="person static">
+                    <div class="avatar" [style.background]="u.avatarColor">{{initial(u.name)}}</div>
+                    <div><strong>{{u.name}}</strong><small>{{u.email}}</small></div>
+                </div>
+                }}
+            </div>
+            }
+        </div>
+        }
+    </div>
+  }
+</div>
